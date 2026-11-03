@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trading Dashboard</title>
+<style>
+:root{--bg:#0f1217;--card:#171b22;--card2:#1e232c;--line:#2a3039;--text:#e8ebf0;--muted:#8b93a1;--green:#3ddc84;--red:#ff5c6c;--amber:#ffb84d;--blue:#5aa9ff;--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 -apple-system,Segoe UI,Inter,Roboto,sans-serif;padding:20px 24px 60px}
+h1{font-size:20px;margin:0;font-weight:600}
+h2{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:28px 0 10px;font-weight:600}
+header{display:flex;justify-content:space-between;align-items:baseline;gap:16px;flex-wrap:wrap}
+.sub{color:var(--muted);font-size:12px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-top:16px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.kpi .l{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+.kpi .v{font-size:24px;font-weight:600;margin-top:4px;font-family:var(--mono)}
+.kpi .d{font-size:12px;margin-top:2px;font-family:var(--mono)}
+.pos{color:var(--green)}.neg{color:var(--red)}.warn{color:var(--amber)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;cursor:pointer;transition:border-color .15s}
+.card:hover{border-color:var(--blue)}
+.card.open{border-color:var(--blue);background:var(--card2)}
+.card .t{display:flex;justify-content:space-between;align-items:center;font-weight:600}
+.card .row{display:flex;justify-content:space-between;font-family:var(--mono);font-size:13px;margin-top:6px}
+.card .row span:first-child{color:var(--muted);font-family:inherit}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;vertical-align:middle}
+.dot.green{background:var(--green)}.dot.amber{background:var(--amber)}.dot.red{background:var(--red)}
+.badge{font-size:11px;padding:2px 8px;border-radius:999px;background:var(--line);color:var(--muted);font-weight:500}
+.badge.live{background:#3a2a10;color:var(--amber)}.badge.paper{background:#13273a;color:var(--blue)}
+.spark{display:block;width:100%;height:36px;margin-top:8px}
+.detail{display:none;background:var(--card2);border:1px solid var(--blue);border-radius:10px;padding:16px 18px;margin-top:12px;grid-column:1/-1}
+.detail.open{display:block}
+.tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px}
+.tab{padding:6px 12px;border-radius:6px;background:transparent;color:var(--muted);border:1px solid transparent;cursor:pointer;font-size:13px}
+.tab.on{background:var(--card);color:var(--text);border-color:var(--line)}
+.tab .n{opacity:.6;margin-left:4px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{color:var(--muted);text-align:left;font-weight:500;padding:6px 8px;border-bottom:1px solid var(--line);font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+td{padding:6px 8px;border-bottom:1px solid #22272f;font-family:var(--mono);white-space:nowrap}
+td.tx{font-family:inherit;white-space:normal}
+tr:last-child td{border-bottom:0}
+.tw{overflow:auto;max-height:420px}
+.issues{display:flex;flex-direction:column;gap:6px}
+.issue{display:grid;grid-template-columns:70px 140px 1fr;gap:10px;padding:8px 12px;border-radius:8px;background:var(--card);border-left:3px solid var(--amber);font-size:13px}
+.issue.error{border-left-color:var(--red)}
+.issue .w{color:var(--muted);font-family:var(--mono);font-size:12px}
+.empty{color:var(--muted);padding:10px 0;font-size:13px}
+pre{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:12px;font-size:12px;overflow:auto;max-height:420px;white-space:pre-wrap}
+.chart{width:100%;height:220px;background:var(--bg);border:1px solid var(--line);border-radius:8px}
+.legend{font-size:12px;color:var(--muted);margin-top:4px}
+.legend b{color:var(--text);font-weight:500}
+@media(max-width:600px){body{padding:14px}.issue{grid-template-columns:1fr}}
+#gate{display:none;position:fixed;inset:0;background:var(--bg);z-index:50;align-items:center;justify-content:center;padding:24px}
+#gate.on{display:flex}
+#gate form{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:24px;width:min(360px,100%);display:flex;flex-direction:column;gap:12px}
+#gate h1{font-size:16px}
+#gate input{background:var(--bg);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:10px 12px;font-size:15px}
+#gate button{background:var(--blue);color:#0b1320;border:0;border-radius:8px;padding:10px;font-weight:600;cursor:pointer}
+#gate .err{color:var(--red);font-size:13px;min-height:1.2em}
+#gate label{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div id="gate"><form id="gateform">
+  <h1>Trading Dashboard</h1>
+  <div class="sub">Enter the passphrase to unlock today's data.</div>
+  <input id="pass" type="password" placeholder="Passphrase" autocomplete="current-password" autofocus>
+  <label><input id="remember" type="checkbox" checked style="width:auto"> Remember on this device</label>
+  <div class="err" id="gateerr"></div>
+  <button type="submit">Unlock</button>
+</form></div>
+<header>
+  <div><h1>Trading Dashboard</h1><div class="sub" id="gen"></div></div>
+  <div class="sub">Paper = Alpaca bots · Live = Fidelity</div>
+</header>
+
+<div class="kpis" id="kpis"></div>
+
+<h2>Issues</h2>
+<div class="issues" id="issues"></div>
+
+<h2>Sleeves</h2>
+<div class="grid" id="sleeves"></div>
+
+<h2>Accounts <span class="sub">— click one to drill down</span></h2>
+<div class="grid" id="accounts"></div>
+
+<h2>Equity vs benchmark (indexed to 100)</h2>
+<svg class="chart" id="chart" viewBox="0 0 1000 220" preserveAspectRatio="none"></svg>
+<div class="legend" id="legend"></div>
+
+<script>
+let D = null;
+const $ = s => document.querySelector(s);
+const money = v => (v<0?'-':'')+'$'+Math.abs(v).toLocaleString(undefined,{maximumFractionDigits:0});
+const money2 = v => v==null?'—':(v<0?'-':'')+'$'+Math.abs(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+const pct = v => v==null?'—':(v>=0?'+':'')+v.toFixed(2)+'%';
+const sgn = v => v>0?'pos':v<0?'neg':'';
+const esc = s => String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const num = v => v==null?'—':Number(v).toLocaleString(undefined,{maximumFractionDigits:4});
+
+function boot(){
+$('#gen').textContent = 'Generated '+D.generated;
+
+// ---- KPIs
+const T = D.totals;
+$('#kpis').innerHTML = [
+  ['Total equity', money(T.equity), `${money(T.start)} start`,''],
+  ['Today', money(T.today_pl), pct(T.today_pc), sgn(T.today_pl)],
+  ['Since start', money(T.total_pl), pct(T.total_pc)+(D.benchmark.pc!=null?` · ${D.benchmark.symbol} ${pct(D.benchmark.pc)} same window`:''), sgn(T.total_pl)],
+  ['Open positions', T.positions, `${T.fills_today} fill${T.fills_today==1?'':'s'} today`,''],
+  ['Issues', T.issues, `${T.warnings} warning${T.warnings==1?'':'s'}`, T.issues?'neg':T.warnings?'warn':'pos'],
+].map(([l,v,d,c])=>`<div class="kpi"><div class="l">${l}</div><div class="v ${c}">${v}</div><div class="d ${c}">${d}</div></div>`).join('');
+
+// ---- Issues
+$('#issues').innerHTML = D.issues.length ? D.issues.slice(0,40).map(i=>
+  `<div class="issue ${i.level}"><div class="w">${esc(i.when)}</div><div><b>${esc(i.account)}</b></div><div>${esc(i.text)}</div></div>`).join('')
+  : '<div class="empty">Nothing errored. All scheduled runs on time, no rejected or expired orders.</div>';
+
+// ---- Sleeves
+$('#sleeves').innerHTML = D.sleeves.map(s=>`
+  <div class="card" onclick="filterSleeve('${esc(s.name)}')">
+    <div class="t"><span><span class="dot ${s.status}"></span>${esc(s.name)}</span><span class="badge">${s.accounts.length} acct</span></div>
+    <div class="row"><span>Equity</span><span>${money(s.equity)}</span></div>
+    <div class="row"><span>Today</span><span class="${sgn(s.today_pl)}">${money(s.today_pl)} (${pct(s.today_pc)})</span></div>
+    <div class="row"><span>Since start</span><span class="${sgn(s.total_pl)}">${money(s.total_pl)} (${pct(s.total_pc)})</span></div>
+    <div class="row"><span>Positions / issues</span><span>${s.positions} / <span class="${s.errors?'neg':''}">${s.errors}</span></span></div>
+  </div>`).join('');
+
+renderAccounts();
+drawChart();
+}
+
+// ---- Sparkline
+function spark(curve, w=300, h=36){
+  if(!curve||curve.length<2) return '';
+  const ys=curve.map(c=>c[1]), mn=Math.min(...ys), mx=Math.max(...ys), r=(mx-mn)||1;
+  const pts=ys.map((y,i)=>`${(i/(ys.length-1)*w).toFixed(1)},${(h-2-(y-mn)/r*(h-4)).toFixed(1)}`).join(' ');
+  const up=ys[ys.length-1]>=ys[0];
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><polyline fill="none" stroke="${up?'var(--green)':'var(--red)'}" stroke-width="1.5" points="${pts}"/></svg>`;
+}
+
+// ---- Accounts
+let openId=null, sleeveFilter=null;
+function renderAccounts(){
+  const list = D.accounts.filter(a=>!sleeveFilter||a.sleeve===sleeveFilter);
+  $('#accounts').innerHTML = list.map(a=>`
+    <div class="card ${openId===a.id?'open':''}" onclick="toggle('${esc(a.id)}')">
+      <div class="t"><span><span class="dot ${a.api_ok?a.status:'red'}"></span>${esc(a.name)}</span><span class="badge ${a.kind}">${a.kind}</span></div>
+      <div class="row"><span>Equity</span><span>${a.api_ok?money(a.equity):'<span class="neg">unreachable</span>'}</span></div>
+      <div class="row"><span>Today</span><span class="${sgn(a.today_pl)}">${money(a.today_pl)} (${pct(a.today_pc)})</span></div>
+      <div class="row"><span>Since start</span><span class="${sgn(a.total_pl)}">${money(a.total_pl)} (${pct(a.total_pc)})</span></div>
+      <div class="row"><span>Positions · open orders</span><span>${a.positions.length} · ${a.open_orders.length}</span></div>
+      <div class="row"><span>Status</span><span class="${a.status==='green'?'':a.status==='amber'?'warn':'neg'}" style="font-size:11px">${esc(a.status_text||'')}</span></div>
+      ${spark(a.curve)}
+    </div>` + (openId===a.id?detail(a):'')).join('') + (sleeveFilter?`<div class="empty" style="grid-column:1/-1"><a href="#" onclick="filterSleeve(null);return false" style="color:var(--blue)">Show all accounts</a></div>`:'');
+}
+function toggle(id){openId = openId===id?null:id; renderAccounts(); if(openId){const el=document.querySelector('.detail'); el&&el.scrollIntoView({behavior:'smooth',block:'nearest'});}}
+function filterSleeve(s){sleeveFilter=s; openId=null; renderAccounts(); $('#accounts').scrollIntoView({behavior:'smooth'});}
+
+function tbl(cols, rows){
+  if(!rows||!rows.length) return '<div class="empty">None.</div>';
+  return `<div class="tw"><table><thead><tr>${cols.map(c=>`<th>${c[0]}</th>`).join('')}</tr></thead><tbody>${
+    rows.map(r=>`<tr>${cols.map(c=>{const v=typeof c[1]==='function'?c[1](r):r[c[1]]; return `<td class="${c[2]||''} ${c[3]?c[3](r):''}">${v??'—'}</td>`}).join('')}</tr>`).join('')}</tbody></table></div>`;
+}
+const cls=k=>r=>sgn(r[k]);
+
+function detail(a){
+  const tabs = {
+    positions: ['Positions', a.positions.length, ()=>tbl([
+      ['Symbol','symbol'],['Qty',r=>num(r.qty)],['Entry',r=>money2(r.entry)],['Now',r=>money2(r.price)],['Value',r=>money(r.value)],
+      ['Today',r=>`${money(r.today)} (${pct(r.todaypc)})`,'',cls('today')],['P&L',r=>`${money(r.pl)} (${pct(r.plpc)})`,'',cls('pl')],
+      ['Stop',r=>r.stop?`${money2(r.stop)} <span class="sub">(${r.stop_dist!=null?r.stop_dist.toFixed(1)+'% away':''}${r.stop_expires?', exp '+r.stop_expires:''})</span>`:(a.kind==='paper'?'<span class="neg">none at broker</span>':'<span class="warn">none set</span>')],
+      ...(a.kind==='live'?[['Target',r=>r.target?`${money2(r.target)} <span class="sub">(${r.target_dist!=null?'+'+r.target_dist.toFixed(1)+'% away':''})</span>`:'—'],['Opened','opened'],['Note',r=>esc(r.note),'tx']]:[])
+    ], a.positions)],
+    orders: ['Orders', a.orders.length, ()=>tbl([['When','ts'],['Symbol','symbol'],['Side','side'],['Type','type'],['Qty',r=>num(r.qty)],['Limit',r=>money2(r.limit)],['Stop',r=>money2(r.stop)],['Fill',r=>money2(r.fill)],['Status','status','',r=>['rejected','canceled','expired'].includes(r.status)?'neg':r.status==='filled'?'pos':''],['TIF','tif'],['Expires','expires']], a.orders)],
+    fills: ['Fills', a.fills.length, ()=>tbl([['When','ts'],['Symbol','symbol'],['Side','side'],['Qty',r=>num(r.qty)],['Price',r=>money2(r.price)]], a.fills)],
+    trades: ['Closed trades', (a.trades||[]).length, ()=>{const rows=a.trades||[]; if(!rows.length) return '<div class="empty">No closed trades yet.</div>'; const cols=Object.keys(rows[0]).slice(0,10).map(k=>[k,r=>esc(r[k]),'tx']); const st=a.stats||{}; return (st.closed?`<div class="legend" style="margin-bottom:8px">${st.closed} closed · win rate <b>${st.win_rate.toFixed(0)}%</b> · avg win <b>${pct(st.avg_win)}</b> · avg loss <b>${pct(st.avg_loss)}</b></div>`:'')+tbl(cols,rows);}],
+    candidates: ['Candidates (3d)', (a.candidates||[]).length, ()=>{const rows=a.candidates||[]; if(!rows.length) return `<div class="empty">No candidates logged in the last 3 days${a.stats&&a.stats.candidates_total!=null?` (${a.stats.candidates_total} all-time, ${a.stats.enters_total} entered)`:''}.</div>`; const keep=Object.keys(rows[0]).filter(k=>!['tests'].includes(k)).slice(0,12); return tbl(keep.map(k=>[k,r=>esc(r[k]),'tx']),rows);}],
+    errors: ['Errors', (a.errors||[]).length, ()=>tbl([['When','when'],['Where','where'],['Message',r=>esc(r.text),'tx']], a.errors)],
+    report: ['Last report', a.last_report?1:0, ()=>a.report_md?`<div class="legend" style="margin-bottom:6px">reports/${esc(a.strategy)}/${esc(a.last_report)}.md</div><pre>${esc(a.report_md)}</pre>`:'<div class="empty">No report file found.</div>'],
+  };
+  if(a.kind==='live') { delete tabs.candidates; delete tabs.report; delete tabs.errors; delete tabs.trades; }
+  const first = a.positions.length?'positions':(a.errors&&a.errors.length?'errors':'candidates');
+  const cur = detailTab[a.id]||first||'positions';
+  const meta = a.kind==='paper'
+    ? `Account ${esc(a.id)} · ${esc(a.strategy)} · schedule: ${esc((a.schedule||[]).join(', '))} · cash ${money(a.cash)}${a.api_error?` · <span class="neg">${esc(a.api_error)}</span>`:''}`
+    : `Fidelity · ${esc(a.source||'')} · cash ${money(a.cash)}${a.notes?' · '+esc(a.notes):''}`;
+  return `<div class="detail open" onclick="event.stopPropagation()">
+    <div class="legend" style="margin-bottom:10px">${meta}</div>
+    <div class="tabs">${Object.entries(tabs).map(([k,v])=>`<button class="tab ${cur===k?'on':''}" onclick="setTab('${esc(a.id)}','${k}')">${v[0]}<span class="n">${v[1]}</span></button>`).join('')}</div>
+    ${(tabs[cur]||tabs[Object.keys(tabs)[0]])[2]()}
+  </div>`;
+}
+const detailTab={};
+function setTab(id,k){detailTab[id]=k; renderAccounts();}
+
+// ---- Equity chart (indexed)
+function drawChart(){
+  const svg=$('#chart'), W=1000,H=220, pad={l:40,r:10,t:10,b:20};
+  const series=[];
+  const palette=['#5aa9ff','#3ddc84','#ffb84d','#ff5c6c','#c58aff','#5fe3d6','#ff9f5a'];
+  D.accounts.forEach((a,i)=>{ if(a.curve&&a.curve.length>1) series.push({name:a.name,c:a.curve,col:palette[i%palette.length]}); });
+  if(D.benchmark.curve&&D.benchmark.curve.length>1) series.push({name:D.benchmark.symbol,c:D.benchmark.curve,col:'#8b93a1',dash:true});
+  if(!series.length){svg.outerHTML='<div class="empty">Equity history appears after a few daily runs (history/ folder) or from Alpaca portfolio history.</div>';return;}
+  const dates=[...new Set(series.flatMap(s=>s.c.map(p=>p[0])))].sort();
+  const x=d=>pad.l+dates.indexOf(d)/(dates.length-1||1)*(W-pad.l-pad.r);
+  let mn=Infinity,mx=-Infinity;
+  series.forEach(s=>{const b=s.c[0][1]; s.i=s.c.map(p=>[p[0],p[1]/b*100]); s.i.forEach(p=>{mn=Math.min(mn,p[1]);mx=Math.max(mx,p[1]);});});
+  mn=Math.floor(mn-1); mx=Math.ceil(mx+1);
+  const y=v=>pad.t+(1-(v-mn)/(mx-mn))*(H-pad.t-pad.b);
+  let out='';
+  for(let g=mn; g<=mx; g+= Math.max(1,Math.round((mx-mn)/4))) out+=`<line x1="${pad.l}" x2="${W-pad.r}" y1="${y(g)}" y2="${y(g)}" stroke="#2a3039"/><text x="4" y="${y(g)+4}" fill="#8b93a1" font-size="11">${g}</text>`;
+  series.forEach(s=>{ out+=`<polyline fill="none" stroke="${s.col}" stroke-width="${s.dash?1.2:1.8}" ${s.dash?'stroke-dasharray="4 3"':''} points="${s.i.map(p=>`${x(p[0]).toFixed(1)},${y(p[1]).toFixed(1)}`).join(' ')}"/>`; });
+  out+=`<text x="${pad.l}" y="${H-4}" fill="#8b93a1" font-size="11">${dates[0]}</text><text x="${W-pad.r}" y="${H-4}" fill="#8b93a1" font-size="11" text-anchor="end">${dates[dates.length-1]}</text>`;
+  svg.innerHTML=out;
+  $('#legend').innerHTML=series.map(s=>`<span style="margin-right:14px"><span class="dot" style="background:${s.col}"></span>${esc(s.name)} <b>${(s.i[s.i.length-1][1]-100).toFixed(2)}%</b></span>`).join('');
+}
+
+// ---- Hosted mode: data.enc next to the page, decrypted in the browser
+const b64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+async function decryptBlob(blob, pass){
+  const enc=new TextEncoder();
+  const base=await crypto.subtle.importKey('raw',enc.encode(pass),'PBKDF2',false,['deriveBits']);
+  const bits=new Uint8Array(await crypto.subtle.deriveBits({name:'PBKDF2',hash:'SHA-256',salt:b64(blob.salt),iterations:blob.iters},base,512));
+  const ek=await crypto.subtle.importKey('raw',bits.slice(0,32),{name:'AES-CTR'},false,['decrypt']);
+  const mk=await crypto.subtle.importKey('raw',bits.slice(32),{name:'HMAC',hash:'SHA-256'},false,['verify']);
+  const iv=b64(blob.iv), ct=b64(blob.ct);
+  const signed=new Uint8Array(iv.length+ct.length); signed.set(iv); signed.set(ct,iv.length);
+  if(!await crypto.subtle.verify('HMAC',mk,b64(blob.mac),signed)) throw new Error('bad');
+  const pt=await crypto.subtle.decrypt({name:'AES-CTR',counter:iv,length:128},ek,ct);
+  return JSON.parse(new TextDecoder().decode(pt));
+}
+async function remoteBoot(){
+  const gate=$('#gate'), form=$('#gateform'), err=$('#gateerr');
+  let blob;
+  try{ blob=await (await fetch('data.enc?t='+Date.now(),{cache:'no-store'})).json(); }
+  catch(e){ gate.classList.add('on'); err.textContent='Could not load data.enc next to this page.'; return; }
+  let saved=null; try{ saved=localStorage.getItem('dash_pass'); }catch(e){}
+  const tryPass=async (p,remember)=>{
+    try{ D=await decryptBlob(blob,p); }catch(e){ return false; }
+    if(remember){ try{ localStorage.setItem('dash_pass',p); }catch(e){} }
+    gate.classList.remove('on'); boot(); return true;
+  };
+  if(saved && await tryPass(saved,false)) return;
+  gate.classList.add('on');
+  form.addEventListener('submit', async ev=>{
+    ev.preventDefault(); err.textContent='';
+    if(!await tryPass($('#pass').value,$('#remember').checked)) err.textContent='Wrong passphrase.';
+  });
+}
+if(D) boot(); else remoteBoot();
+</script>
+</body>
+</html>
